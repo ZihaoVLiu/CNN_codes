@@ -2,7 +2,7 @@ import numpy as np
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 from keras import layers
-from keras import regularizers
+from keras import regularizers, callbacks
 from keras.layers import Input, Add, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Dropout, Conv2D, AveragePooling2D, MaxPooling2D, GlobalMaxPooling2D
 from keras.models import Model, load_model
 from keras.preprocessing import image
@@ -186,6 +186,8 @@ if __name__ == '__main__':
 
     model = Liu_ShiNet50(input_shape=(480, 480, 3), classes=3)
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    learning_rate_reduction = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10,
+                                                          verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
     print('Training stage starts.')
     # change two parameters
     lists_data = load_covidx(try_txt_train, try_path_train)
@@ -195,17 +197,17 @@ if __name__ == '__main__':
         get_fold_valid(lists_data, batch_size=batch_size, path=try_path_train)
     history = model.fit_generator(generator=generator_train, steps_per_epoch=step_per_epoch,
                                   validation_data=generator_valid, validation_steps=validation_steps,
-                                  use_multiprocessing=True, epochs=epoch, verbose=1)
+                                  use_multiprocessing=True, epochs=epoch, verbose=1, callbacks=[learning_rate_reduction])
 
-    # model.save('Liu-Shi_Net.h5')
+    model.save('Liu-Shi_Net.h5')
     plot(history)
 
-    # print('Testing stage starts.')
-    # lists_test = load_covidx(txt_test_file, save_path_test)
-    # print("Number of test examples = " + str(len(lists_test[0])))
-    # generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
-    # preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
-    #
-    # print("Loss = " + str(preds[0]))
-    # print("Test Accuracy = " + str(preds[1]))
+    print('Testing stage starts.')
+    lists_test = load_covidx(txt_test_file, save_path_test)
+    print("Number of test examples = " + str(len(lists_test[0])))
+    generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
+    preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
+
+    print("Loss = " + str(preds[0]))
+    print("Test Accuracy = " + str(preds[1]))
 
