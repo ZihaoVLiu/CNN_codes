@@ -2,6 +2,7 @@ import numpy as np
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 from keras import layers
+from keras import regularizers
 from keras.layers import Input, Add, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Dropout, Conv2D, AveragePooling2D, MaxPooling2D, GlobalMaxPooling2D
 from keras.models import Model, load_model
 from keras.preprocessing import image
@@ -46,19 +47,19 @@ def identity_block(X, f, filters, stage, block):
 
     # First component of main path
     X = Conv2D(filters=F1, kernel_size=(1, 1), strides=(1, 1), padding='valid', name=conv_name_base + '2a',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2a')(X)
     X = Activation('relu')(X)
 
     # Second component of main path (≈3 lines)
     X = Conv2D(filters=F2, kernel_size=(f, f), strides=(1, 1), padding='same', name=conv_name_base + '2b',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2b')(X)
     X = Activation('relu')(X)
 
     # Third component of main path (≈2 lines)
     X = Conv2D(filters=F3, kernel_size=(1, 1), strides=(1, 1), padding='valid', name=conv_name_base + '2c',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2c')(X)
 
     # Final step: Add shortcut value to main path, and pass it through a RELU activation (≈2 lines)
@@ -99,19 +100,19 @@ def convolutional_block(X, f, filters, stage, block, s=2):
     ##### MAIN PATH #####
     # First component of main path
     X = Conv2D(F1, (1, 1), strides=(s, s), padding='valid', name=conv_name_base + '2a',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2a')(X)
     X = Activation('relu')(X)
 
     # Second component of main path
     X = Conv2D(filters=F2, kernel_size=(f, f), strides=(1, 1), padding='same', name=conv_name_base + '2b',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2b')(X)
     X = Activation('relu')(X)
 
     # Third component of main path
     X = Conv2D(filters=F3, kernel_size=(1, 1), strides=(1, 1), padding='valid', name=conv_name_base + '2c',
-               kernel_initializer=glorot_uniform(seed=0))(X)
+               kernel_initializer=glorot_uniform(seed=0), kernel_regularizer=regularizers.l2(0.001))(X)
     X = BatchNormalization(axis=3, name=bn_name_base + '2c')(X)
 
     ##### SHORTCUT PATH ####
@@ -157,10 +158,10 @@ def Liu_ShiNet50(input_shape=(64, 64, 3), classes=6):
     X = identity_block(X, 3, [64, 64, 256], stage=2, block='b')
     X = identity_block(X, 3, [64, 64, 256], stage=2, block='c')
 
-    # Stage 3
-    X = convolutional_block(X, f=3, filters=[128, 128, 512], stage=3, block='a', s=2)
-    X = identity_block(X, f=3, filters=[128, 128, 512], stage=3, block='b')
-    X = identity_block(X, f=3, filters=[128, 128, 512], stage=3, block='c')
+    # # Stage 3
+    # X = convolutional_block(X, f=3, filters=[128, 128, 512], stage=3, block='a', s=2)
+    # X = identity_block(X, f=3, filters=[128, 128, 512], stage=3, block='b')
+    # X = identity_block(X, f=3, filters=[128, 128, 512], stage=3, block='c')
 
 
     # AVGPOOL (≈1 line). Use "X = AveragePooling2D(...)(X)"
@@ -181,7 +182,7 @@ def Liu_ShiNet50(input_shape=(64, 64, 3), classes=6):
 if __name__ == '__main__':
     # change parameter here
     batch_size = 3
-    epoch = 20
+    epoch = 2
 
     model = Liu_ShiNet50(input_shape=(480, 480, 3), classes=3)
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -196,15 +197,15 @@ if __name__ == '__main__':
                                   validation_data=generator_valid, validation_steps=validation_steps,
                                   use_multiprocessing=True, epochs=epoch, verbose=1)
 
-    model.save('Liu-Shi_Net.h5')
+    # model.save('Liu-Shi_Net.h5')
     plot(history)
 
-    print('Testing stage starts.')
-    lists_test = load_covidx(txt_test_file, save_path_test)
-    print("Number of test examples = " + str(len(lists_test[0])))
-    generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
-    preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
-
-    print("Loss = " + str(preds[0]))
-    print("Test Accuracy = " + str(preds[1]))
+    # print('Testing stage starts.')
+    # lists_test = load_covidx(txt_test_file, save_path_test)
+    # print("Number of test examples = " + str(len(lists_test[0])))
+    # generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
+    # preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
+    #
+    # print("Loss = " + str(preds[0]))
+    # print("Test Accuracy = " + str(preds[1]))
 
