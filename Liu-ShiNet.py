@@ -196,12 +196,13 @@ if __name__ == '__main__':
                                   validation_data=generator_valid, validation_steps=validation_steps,
                                   use_multiprocessing=True, epochs=epoch, verbose=1)
 
+    model.save('Liu-Shi_Net.h5')
     plot(history)
 
     print('Testing stage starts.')
     lists_test = load_covidx(txt_test_file, save_path_test)
     print("Number of test examples = " + str(len(lists_test[0])))
-    generator_test, steps = get_test_data(lists_data, batch_size, save_path_test)
+    generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
     preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
 
     print("Loss = " + str(preds[0]))
