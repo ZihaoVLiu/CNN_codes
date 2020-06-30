@@ -131,6 +131,7 @@ def draw_confusion_matrix(lists_test, y_pred, is_norm=False):
     tick_marks = np.array(range(len(labels))) + 0.5
 
     y_test = lists_test[1]
+    y_test = y_test[:y_pred.shape[0]]
     con_mat = confusion_matrix(y_test, y_pred.argmax(axis=1))
     if is_norm:
         con_mat = con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis]
