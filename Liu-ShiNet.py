@@ -12,6 +12,7 @@ from keras.applications.imagenet_utils import preprocess_input
 from keras.utils.vis_utils import model_to_dot
 from keras.utils import plot_model
 from data_loader import *
+from resnets_utils import draw_confusion_matrix
 from keras.initializers import glorot_uniform
 import scipy.misc
 
@@ -181,7 +182,7 @@ def Liu_ShiNet50(input_shape=(64, 64, 3), classes=6):
 
 if __name__ == '__main__':
     # change parameter here
-    batch_size = 3
+    batch_size = 2
     epoch = 2
 
     model = Liu_ShiNet50(input_shape=(480, 480, 3), classes=3)
@@ -203,11 +204,13 @@ if __name__ == '__main__':
     plot(history)
 
     print('Testing stage starts.')
-    lists_test = load_covidx(txt_test_file, save_path_test)
+    lists_test = load_covidx(try_txt_test, try_path_test)
     print("Number of test examples = " + str(len(lists_test[0])))
-    generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
-    preds = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
+    generator_test, steps = get_test_data(lists_test, batch_size, try_path_test)
+    preds = model.predict_generator(generator=generator_test, steps=steps, verbose=1)
+    draw_confusion_matrix(lists_test, preds)
+    evaluate = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
 
-    print("Loss = " + str(preds[0]))
-    print("Test Accuracy = " + str(preds[1]))
+    print("Loss = " + str(evaluate[0]))
+    print("Test Accuracy = " + str(evaluate[1]))
 

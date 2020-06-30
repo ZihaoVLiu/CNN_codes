@@ -132,7 +132,7 @@ def get_fold_valid(lists_data, batch_size, path):
 
 
 def get_test_data(lists_data, batch_size, path):
-    lists_data_test, lists_label_test = random_image(lists_data)
+    lists_data_test, lists_label_test = lists_data
     test_size = len(lists_data_test)
     print("Testing batch size is " + str(test_size))
     test_remainder = test_size % batch_size

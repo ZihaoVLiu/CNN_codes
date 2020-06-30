@@ -1,8 +1,10 @@
-import os
 import numpy as np
 import tensorflow as tf
 import h5py
 import math
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 def load_dataset():
     train_dataset = h5py.File('datasets/train_signs.h5', "r")
@@ -121,3 +123,22 @@ def predict(X, parameters):
     prediction = sess.run(p, feed_dict = {x: X})
         
     return prediction
+
+
+def draw_confusion_matrix(lists_test, y_pred, is_norm=False):
+    # offset the labels
+    labels = ('pneumonia', 'normal', 'COVID-19')
+    tick_marks = np.array(range(len(labels))) + 0.5
+
+    y_test = lists_test[1]
+    con_mat = confusion_matrix(y_test, y_pred.argmax(axis=1))
+    if is_norm:
+        con_mat = con_mat.astype('float') / con_mat.sum(axis=1)[:, np.newaxis]
+        con_mat = np.around(con_mat, decimals=2)
+    sns.heatmap(con_mat, annot=True, cmap='Blues')
+    plt.xlabel('Predicted labels')
+    plt.ylabel('True labels')
+    plt.xticks(tick_marks, labels)
+    plt.yticks(tick_marks, labels)
+    plt.grid(True, which='minor', linestyle='-')
+    plt.show()
