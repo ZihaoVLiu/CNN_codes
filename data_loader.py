@@ -9,14 +9,14 @@ import random
 
 base_path = '/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data'
 
-read_path_test = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/test"
-save_path_test = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/test_resize"
+read_path_train = "{}/train".format(base_path)
+save_path_train = "{}/train_resize".format(base_path)
 
-read_path_train = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/train"
-save_path_train = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/train_resize"
+read_path_test = "{}/test".format(base_path)
+save_path_test = "{}/test_resize".format(base_path)
 
-txt_train_file = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/train_split_v3.txt"
-txt_test_file = "/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data/test_split_v3.txt"
+txt_train_file = "{}/train_split_v3.txt".format(base_path)
+txt_test_file = "{}/test_split_v3.txt".format(base_path)
 
 try_path_train = '{}/read_image_train'.format(base_path)
 try_txt_train = '{}/try_txt_train.txt'.format(base_path)
@@ -24,6 +24,12 @@ try_path_test = '{}/read_image_test'.format(base_path)
 try_txt_test = '{}/try_txt_test.txt'.format(base_path)
 
 def get_class_info(txt_file, image_path):
+    '''
+    pair all the image name into different class dictionaries
+    :param txt_file: .txt path
+    :param image_path: .image directory path
+    :return: 3 dictionaries
+    '''
     with open(txt_file) as file_obj:
         lines = file_obj.readlines()
         image_number = len(lines)
@@ -49,6 +55,11 @@ def get_class_info(txt_file, image_path):
 
 
 def get_image_path(dicts):
+    '''
+    pair all image names and classes into two lists in order
+    :param dicts:
+    :return: two lists, one is image name, another is class label
+    '''
     dict_pneumonia, dict_normal, dict_covid = dicts
     list_pneumonia = list(dict_pneumonia.values())
     list_normal = list(dict_normal.values())
@@ -58,6 +69,11 @@ def get_image_path(dicts):
     return lists_data, lists_label
 
 def random_image(lists):
+    '''
+    shuffle the lists
+    :param lists:
+    :return: two shuffled lists
+    '''
     lists_data, lists_label = lists
     indexes = list(range(len(lists_label)))
     indexes = random.sample(indexes, len(lists_label))
@@ -67,7 +83,14 @@ def random_image(lists):
 
 
 def get_im_cv2(img_names, path, batch_size):
-    imgs =  np.zeros((batch_size, 480, 480, 3))
+    '''
+    read all images into a 4 dimensionality np array
+    :param img_names: a list
+    :param path: image directory
+    :param batch_size:
+    :return: 4 dimensionality np array
+    '''
+    imgs = np.zeros((batch_size, 480, 480, 3))
     for index, item in enumerate(img_names):
         img_path = path + '/' + item
         img = cv2.imread(img_path)
@@ -77,6 +100,12 @@ def get_im_cv2(img_names, path, batch_size):
 
 
 def load_covidx(txt_train_file, save_path_train):
+    '''
+    the combination of get_class_info() and gey_image_path()
+    :param txt_train_file: .txt directory
+    :param save_path_train: image directory
+    :return: two lists
+    '''
     dicts_train = get_class_info(txt_train_file, save_path_train)
     lists_train = get_image_path(dicts_train)
     lists_data_train, lists_label_train = lists_train
@@ -90,6 +119,14 @@ def convert_to_one_hot_matrix(Y, C):
 
 
 def get_train_batch(lists_data, lists_label, batch_size, path):
+    '''
+    a data generator to avoid out of memory for Keras.fit_generator() method
+    :param lists_data:
+    :param lists_label:
+    :param batch_size:
+    :param path:
+    :return: a np.array of images, and a np.array of one-hot class labels for training set
+    '''
     while True:
         for i in range(0, len(lists_data), batch_size):
             datas = get_im_cv2(lists_data[i: i + batch_size], path, batch_size)
@@ -100,6 +137,14 @@ def get_train_batch(lists_data, lists_label, batch_size, path):
 
 
 def get_valid_batch(lists_data, lists_label, batch_size, path):
+    '''
+    same as previous function, but for testing set
+    :param lists_data:
+    :param lists_label:
+    :param batch_size:
+    :param path:
+    :return:
+    '''
     while True:
         for i in range(0, len(lists_data), batch_size):
             datas = get_im_cv2(lists_data[i: i + batch_size], path, batch_size)
@@ -109,6 +154,14 @@ def get_valid_batch(lists_data, lists_label, batch_size, path):
 
 
 def get_fold_valid(lists_data, batch_size, path):
+    '''
+    combination all the function mentioned above, generating two generator (for testing and validation),
+    and step number for both sets
+    :param lists_data: train data and label lists
+    :param batch_size:
+    :param path:
+    :return: two generators and two int numbers
+    '''
     lists_data_train, lists_label_train = random_image(lists_data)
     train_size = int(len(lists_data_train) * 0.9)
     valid_size = len(lists_data_train) - train_size
@@ -132,6 +185,13 @@ def get_fold_valid(lists_data, batch_size, path):
 
 
 def get_test_data(lists_data, batch_size, path):
+    '''
+    same as previous function, but return only one testing set generator and one step number
+    :param lists_data:
+    :param batch_size:
+    :param path:
+    :return:
+    '''
     lists_data_test, lists_label_test = lists_data
     test_size = len(lists_data_test)
     print("Testing batch size is " + str(test_size))
@@ -145,6 +205,11 @@ def get_test_data(lists_data, batch_size, path):
 
 
 def plot(history):
+    '''
+    draw the loss and accuracy for training and validation sets
+    :param history:
+    :return: None
+    '''
     epochs = len(history.history['loss'])
 
     plt.subplot(2, 1, 1)
