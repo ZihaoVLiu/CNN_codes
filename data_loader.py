@@ -54,7 +54,7 @@ def get_class_info(txt_file, image_path):
     return dict_pneumonia, dict_normal, dict_covid
 
 
-def get_image_path(dicts):
+def get_image_path(dicts, sample_number=0):
     '''
     pair all image names and classes into two lists in order
     :param dicts:
@@ -64,8 +64,14 @@ def get_image_path(dicts):
     list_pneumonia = list(dict_pneumonia.values())
     list_normal = list(dict_normal.values())
     list_covid = list(dict_covid.values())
-    lists_data = list_pneumonia + list_normal + list_covid
-    lists_label = [0] * len(list_pneumonia) + [1] * len(list_normal) + [2] * len(list_covid)
+    if not sample_number:
+        lists_data = list_pneumonia + list_normal + list_covid
+        lists_label = [0] * len(list_pneumonia) + [1] * len(list_normal) + [2] * len(list_covid)
+    else:
+        np.random.shuffle(list_pneumonia), np.random.shuffle(list_normal), np.random.shuffle(list_covid)
+        lists_data = list_pneumonia[:sample_number] + list_normal[:sample_number] + list_covid[:sample_number]
+        lists_label = [0] * sample_number + [1] * sample_number + [2] * sample_number
+        print('%d images are selected from each of class.' % sample_number)
     return lists_data, lists_label
 
 def random_image(lists):
@@ -99,7 +105,7 @@ def get_im_cv2(img_names, path, batch_size):
     return imgs
 
 
-def load_covidx(txt_train_file, save_path_train):
+def load_covidx(txt_train_file, save_path_train, sample_number=0):
     '''
     the combination of get_class_info() and gey_image_path()
     :param txt_train_file: .txt directory
@@ -107,7 +113,7 @@ def load_covidx(txt_train_file, save_path_train):
     :return: two lists
     '''
     dicts_train = get_class_info(txt_train_file, save_path_train)
-    lists_train = get_image_path(dicts_train)
+    lists_train = get_image_path(dicts_train, sample_number)
     lists_data_train, lists_label_train = lists_train
     # print("number of loading examples = " + str(len(lists_data_train)))
     return lists_data_train, lists_label_train

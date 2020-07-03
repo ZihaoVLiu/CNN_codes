@@ -191,11 +191,11 @@ if __name__ == '__main__':
                                                           verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
     print('Training stage starts.')
     # change two parameters
-    lists_data = load_covidx(try_txt_train, try_path_train)
+    lists_data = load_covidx(txt_train_file, save_path_train, 4)
     print("number of training examples = " + str(len(lists_data[0])))
     # change parameters after path=
     generator_train, generator_valid, step_per_epoch, validation_steps = \
-        get_fold_valid(lists_data, batch_size=batch_size, path=try_path_train)
+        get_fold_valid(lists_data, batch_size=batch_size, path=save_path_train)
     history = model.fit_generator(generator=generator_train, steps_per_epoch=step_per_epoch,
                                   validation_data=generator_valid, validation_steps=validation_steps,
                                   use_multiprocessing=True, epochs=epoch, verbose=1, callbacks=[learning_rate_reduction])
@@ -204,9 +204,9 @@ if __name__ == '__main__':
     plot(history)
 
     print('Testing stage starts.')
-    lists_test = load_covidx(try_txt_test, try_path_test)
+    lists_test = load_covidx(txt_test_file, save_path_test, 2)
     print("Number of test examples = " + str(len(lists_test[0])))
-    generator_test, steps = get_test_data(lists_test, batch_size, try_path_test)
+    generator_test, steps = get_test_data(lists_test, batch_size, save_path_test)
     preds = model.predict_generator(generator=generator_test, steps=steps, verbose=1)
     draw_confusion_matrix(lists_test, preds)
     evaluate = model.evaluate_generator(generator=generator_test, steps=steps, verbose=1)
