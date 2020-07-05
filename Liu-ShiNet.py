@@ -202,7 +202,7 @@ if __name__ == '__main__':
                                                           verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
     print('Training stage starts.')
     # change two parameters
-    lists_data = load_covidx(txt_train_file, save_path_train, 4, add_aug=save_path_train)
+    lists_data = load_covidx(txt_train_file, save_path_train, 4, add_aug=False)
     print("number of training examples = " + str(len(lists_data[0])))
     # change parameters after path=
     generator_train, generator_valid, step_per_epoch, validation_steps = \

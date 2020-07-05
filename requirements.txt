@@ -1,0 +1,54 @@
+absl-py==0.9.0
+appnope==0.1.0
+astor==0.8.0
+backcall==0.2.0
+certifi==2020.6.20
+cycler==0.10.0
+decorator==4.4.2
+gast==0.2.2
+google-pasta==0.2.0
+grpcio==1.16.1
+h5py==2.10.0
+ipython @ file:///opt/concourse/worker/volumes/live/7ea70a71-5624-4799-50b3-3b90e07922f3/volume/ipython_1593447385860/work
+ipython-genutils==0.2.0
+jedi @ file:///opt/concourse/worker/volumes/live/114a62c0-dd60-4a40-6382-85abb31b5f6e/volume/jedi_1592841953086/work
+joblib==0.15.1
+Keras==2.3.1
+Keras-Applications==1.0.8
+Keras-Preprocessing==1.1.0
+kiwisolver==1.2.0
+Markdown==3.1.1
+matplotlib @ file:///opt/concourse/worker/volumes/live/34dd81d3-0a70-4e5e-5ad6-be36ca7e59f7/volume/matplotlib-base_1592846084794/work
+mkl-fft==1.1.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+numpy==1.18.5
+olefile==0.46
+opt-einsum==3.1.0
+pandas @ file:///opt/concourse/worker/volumes/live/38d1301c-8fa9-4d2f-662e-34dddf33b183/volume/pandas_1592841668171/work
+parso==0.7.0
+pexpect==4.8.0
+pickleshare==0.7.5
+Pillow==7.1.2
+prompt-toolkit==3.0.5
+protobuf==3.12.3
+ptyprocess==0.6.0
+Pygments==2.6.1
+pyparsing==2.4.7
+python-dateutil==2.8.1
+pytz==2020.1
+PyYAML==5.3.1
+scikit-learn @ file:///opt/concourse/worker/volumes/live/eab838ab-55a5-40d0-5cbd-f1854d35aa9d/volume/scikit-learn_1592503039331/work
+scipy @ file:///opt/concourse/worker/volumes/live/14622691-c324-4e90-5a99-87aced91207b/volume/scipy_1592930535761/work
+seaborn==0.10.1
+six==1.15.0
+tensorboard==2.0.0
+tensorflow==2.0.0
+tensorflow-estimator==2.0.0
+termcolor==1.1.0
+threadpoolctl @ file:///tmp/tmp9twdgx9k/threadpoolctl-2.1.0-py3-none-any.whl
+tornado==6.0.4
+traitlets==4.3.3
+wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work
+Werkzeug==1.0.1
+wrapt==1.12.1
