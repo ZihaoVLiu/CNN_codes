@@ -3,20 +3,23 @@ import cv2
 import time
 import h5py
 from PIL import Image
+from data_augmentation import *
 import matplotlib.pyplot as plt
 import numpy as np
 import random
 
 base_path = '/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data'
 
-read_path_train = "{}/train".format(base_path)
+# read_path_train = "{}/train".format(base_path)
 save_path_train = "{}/train_resize".format(base_path)
 
-read_path_test = "{}/test".format(base_path)
+# read_path_test = "{}/test".format(base_path)
 save_path_test = "{}/test_resize".format(base_path)
 
 txt_train_file = "{}/train_split_v3.txt".format(base_path)
 txt_test_file = "{}/test_split_v3.txt".format(base_path)
+
+covid_aug_path = "{}/covid_19_augmentation".format(base_path)
 
 try_path_train = '{}/read_image_train'.format(base_path)
 try_txt_train = '{}/try_txt_train.txt'.format(base_path)
@@ -54,7 +57,7 @@ def get_class_info(txt_file, image_path):
     return dict_pneumonia, dict_normal, dict_covid
 
 
-def get_image_path(dicts, sample_number=0):
+def get_image_path(dicts, sample_number=0, add_aug=False):
     '''
     pair all image names and classes into two lists in order
     :param dicts:
@@ -64,6 +67,11 @@ def get_image_path(dicts, sample_number=0):
     list_pneumonia = list(dict_pneumonia.values())
     list_normal = list(dict_normal.values())
     list_covid = list(dict_covid.values())
+    if bool(add_aug):
+        aug_data, aug_label = get_augmentation_info(add_aug)
+        list_covid += aug_data
+        print("The total number of COVID-19 is %d" % len(list_covid))
+        print('(There are', len(aug_data), 'augmentation images added.)')
     if not sample_number:
         lists_data = list_pneumonia + list_normal + list_covid
         lists_label = [0] * len(list_pneumonia) + [1] * len(list_normal) + [2] * len(list_covid)
@@ -105,15 +113,16 @@ def get_im_cv2(img_names, path, batch_size):
     return imgs
 
 
-def load_covidx(txt_train_file, save_path_train, sample_number=0):
+def load_covidx(txt_train_file, save_path_train, sample_number=0, add_aug=False):
     '''
     the combination of get_class_info() and gey_image_path()
     :param txt_train_file: .txt directory
     :param save_path_train: image directory
+    :param add_aug: the path of augmentation images path
     :return: two lists
     '''
     dicts_train = get_class_info(txt_train_file, save_path_train)
-    lists_train = get_image_path(dicts_train, sample_number)
+    lists_train = get_image_path(dicts_train, sample_number, add_aug)
     lists_data_train, lists_label_train = lists_train
     # print("number of loading examples = " + str(len(lists_data_train)))
     return lists_data_train, lists_label_train
