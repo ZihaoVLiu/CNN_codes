@@ -13,10 +13,12 @@ base_path = '/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data'
 # read_path_train = "{}/train".format(base_path)
 save_path_train = "{}/train_resize".format(base_path)
 gray_path_train = "{}/train_resize_gray".format(base_path)
+h5_train = "{}/train_resize_gray_h5.h5".format(base_path)
 
 # read_path_test = "{}/test".format(base_path)
 save_path_test = "{}/test_resize".format(base_path)
 gray_path_test = "{}/test_resize_gray".format(base_path)
+h5_test = "{}/test_resize_gray_h5.h5".format(base_path)
 
 txt_train_file = "{}/train_split_v3.txt".format(base_path)
 txt_test_file = "{}/test_split_v3.txt".format(base_path)
@@ -107,11 +109,11 @@ def random_image(lists):
     :return: two shuffled lists
     '''
     lists_data, lists_label = lists
-    indexes = list(range(len(lists_label)))
-    indexes = random.sample(indexes, len(lists_label))
-    lists_data = np.array(lists_data)[indexes]
-    lists_label = np.array(lists_label)[indexes]
-    return lists_data.tolist(), lists_label.tolist()
+    indexes = list(range(lists_label.size))
+    np.random.shuffle(indexes)
+    lists_data = lists_data[indexes]
+    lists_label = lists_label[indexes]
+    return lists_data, lists_label
 
 
 def get_im_cv2(img_names, path, batch_size):
@@ -131,7 +133,7 @@ def get_im_cv2(img_names, path, batch_size):
     return imgs
 
 
-def load_covidx(txt_train_file, save_path_train, sample_number=0, add_aug=False):
+def load_covidx(h5_path, sample_number=0, add_aug=False):
     '''
     the combination of get_class_info() and gey_image_path()
     :param txt_train_file: .txt directory
@@ -139,11 +141,27 @@ def load_covidx(txt_train_file, save_path_train, sample_number=0, add_aug=False)
     :param add_aug: the path of augmentation images path
     :return: two lists
     '''
-    dicts_train = get_class_info(txt_train_file, save_path_train)
-    lists_train = get_image_path(dicts_train, sample_number, add_aug)
-    lists_data_train, lists_label_train = lists_train
-    # print("number of loading examples = " + str(len(lists_data_train)))
-    return lists_data_train, lists_label_train
+    data, label = load_h5_as_np(h5_path)
+    pneumonia_number = np.sum(label == 0)
+    normal_number = np.sum(label == 1)
+    covid_number = np.sum(label == 2)
+    print("The number of pneumonia is %d" % pneumonia_number)
+    print("The number of normal is %d" % normal_number)
+    print("The number of COVID-19 is %d" % covid_number)
+    if sample_number:
+        pneumonia_data = data[0:sample_number]
+        normal_data = data[pneumonia_number:pneumonia_number + sample_number]
+        covid_data = data[pneumonia_number + normal_number:pneumonia_number + normal_number + sample_number]
+        data_samples = np.concatenate((pneumonia_data, normal_data, covid_data))
+        pneumonia_label = label[0:sample_number]
+        normal_label = label[pneumonia_number:pneumonia_number + sample_number]
+        covid_laebl = label[pneumonia_number + normal_number:pneumonia_number + normal_number + sample_number]
+        label_samples = np.concatenate((pneumonia_label, normal_label, covid_laebl))
+        print('%d images are selected from each of class.' % sample_number)
+        return data_samples, label_samples
+    else:
+        return data, label
+
 
 
 def convert_to_one_hot_matrix(Y, C):
@@ -151,7 +169,7 @@ def convert_to_one_hot_matrix(Y, C):
     return Y
 
 
-def get_train_batch(lists_data, lists_label, batch_size, path):
+def get_train_batch(data, label, batch_size):
     '''
     a data generator to avoid out of memory for Keras.fit_generator() method
     :param lists_data:
@@ -160,16 +178,17 @@ def get_train_batch(lists_data, lists_label, batch_size, path):
     :param path:
     :return: a np.array of images, and a np.array of one-hot class labels for training set
     '''
+    data_number = label.size
     while True:
-        for i in range(0, len(lists_data), batch_size):
-            datas = get_im_cv2(lists_data[i: i + batch_size], path, batch_size)
-            labels = np.array(lists_label[i: i + batch_size])
+        for i in range(0, data_number, batch_size):
+            datas = data[i: i + batch_size]
+            labels = label[i: i + batch_size]
             labels = convert_to_one_hot_matrix(labels, 3).T
             yield (datas, labels)
             # yield ({'input': datas}, {'output': labels})
 
 
-def get_valid_batch(lists_data, lists_label, batch_size, path):
+def get_valid_batch(data, label, batch_size):
     '''
     same as previous function, but for testing set
     :param lists_data:
@@ -178,15 +197,16 @@ def get_valid_batch(lists_data, lists_label, batch_size, path):
     :param path:
     :return:
     '''
+    data_number = label.size
     while True:
-        for i in range(0, len(lists_data), batch_size):
-            datas = get_im_cv2(lists_data[i: i + batch_size], path, batch_size)
-            labels = np.array(lists_label[i: i + batch_size])
+        for i in range(0, data_number, batch_size):
+            datas = data[i: i + batch_size]
+            labels = label[i: i + batch_size]
             labels = convert_to_one_hot_matrix(labels, 3).T
             yield (datas, labels)
 
 
-def get_fold_valid(lists_data, batch_size, path):
+def get_fold_valid(lists_data, batch_size):
     '''
     combination all the function mentioned above, generating two generator (for testing and validation),
     and step number for both sets
@@ -196,16 +216,17 @@ def get_fold_valid(lists_data, batch_size, path):
     :return: two generators and two int numbers
     '''
     lists_data_train, lists_label_train = random_image(lists_data)
-    train_size = int(len(lists_data_train) * 0.9)
-    valid_size = len(lists_data_train) - train_size
+    data_number = lists_label_train.size
+    train_size = int(data_number * 0.9)
+    valid_size = data_number - train_size
     print("Training size is " + str(train_size))
     print("Validation size is " + str(valid_size))
     train_remainder = train_size % batch_size
     valid_remainder = valid_size % batch_size
     train_generator = get_train_batch(lists_data_train[:(train_size - train_remainder)],
-                                      lists_label_train[:(train_size - train_remainder)], batch_size, path)
-    valid_generator = get_valid_batch(lists_data_train[train_size:(len(lists_data_train) - valid_remainder)],
-                                      lists_label_train[train_size:(len(lists_data_train) - valid_remainder)], batch_size, path)
+                                      lists_label_train[:(train_size - train_remainder)], batch_size)
+    valid_generator = get_valid_batch(lists_data_train[train_size:(data_number - valid_remainder)],
+                                      lists_label_train[train_size:(data_number - valid_remainder)], batch_size)
     step_per_epoch = train_size // batch_size
     validation_steps = valid_size // batch_size
     if validation_steps == 0:
@@ -217,7 +238,7 @@ def get_fold_valid(lists_data, batch_size, path):
     return train_generator, valid_generator, step_per_epoch, validation_steps
 
 
-def get_test_data(lists_data, batch_size, path):
+def get_test_data(lists_data, batch_size):
     '''
     same as previous function, but return only one testing set generator and one step number
     :param lists_data:
@@ -226,11 +247,11 @@ def get_test_data(lists_data, batch_size, path):
     :return:
     '''
     lists_data_test, lists_label_test = lists_data
-    test_size = len(lists_data_test)
+    test_size = lists_label_test.size
     print("Testing batch size is " + str(test_size))
     test_remainder = test_size % batch_size
     test_generator = get_train_batch(lists_data_test[:(test_size - test_remainder)],
-                                      lists_label_test[:(test_size - test_remainder)], batch_size, path)
+                                      lists_label_test[:(test_size - test_remainder)], batch_size)
     steps = test_size // batch_size
     print('Actual testing number used (divisible by batchsize): ' + str(test_size - test_remainder))
     print('Number of step is ' + str(steps))
@@ -286,3 +307,8 @@ def save_as_h5(txt_file, image_path, save_path):
     print('.h5 file generating time is %.2f' % (toc - tic))
 
 
+def load_h5_as_np(h5_path):
+    f = h5py.File(h5_path, 'r')
+    data = np.array(f["data"][:])
+    label = np.array(f["label"][:])
+    return data, label
