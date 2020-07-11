@@ -12,9 +12,11 @@ base_path = '/Users/zihaoliu/Desktop/Graduate_UW/SYDE660/CNN/data'
 
 # read_path_train = "{}/train".format(base_path)
 save_path_train = "{}/train_resize".format(base_path)
+gray_path_train = "{}/train_resize_gray".format(base_path)
 
 # read_path_test = "{}/test".format(base_path)
 save_path_test = "{}/test_resize".format(base_path)
+gray_path_test = "{}/test_resize_gray".format(base_path)
 
 txt_train_file = "{}/train_split_v3.txt".format(base_path)
 txt_test_file = "{}/test_split_v3.txt".format(base_path)
@@ -25,6 +27,22 @@ try_path_train = '{}/read_image_train'.format(base_path)
 try_txt_train = '{}/try_txt_train.txt'.format(base_path)
 try_path_test = '{}/read_image_test'.format(base_path)
 try_txt_test = '{}/try_txt_test.txt'.format(base_path)
+
+
+def rgb2gray(read_path, save_path):
+    tic = time.time()
+    for filename in os.listdir(read_path):
+        if (filename == '.DS_Store'):
+            continue
+        print(filename)
+        read_image_path = read_path + '/' + filename
+        image = cv2.imread(read_image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        save_image_path = save_path + '/' + filename
+        cv2.imwrite(save_image_path, gray)
+    toc = time.time()
+    print('RGB to Gray time is %.2f.' % (toc - tic))
+
 
 def get_class_info(txt_file, image_path):
     '''
