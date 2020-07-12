@@ -116,6 +116,23 @@ def random_image(lists):
     return lists_data, lists_label
 
 
+def random_covidx(data, label):
+    pneumonia_number = np.sum(label == 0)
+    normal_number = np.sum(label == 1)
+    covid_number = np.sum(label == 2)
+    index_p = list(range(pneumonia_number))
+    index_n = list(range(pneumonia_number, pneumonia_number + normal_number))
+    index_c = list(range(pneumonia_number + normal_number, label.size))
+    np.random.shuffle(index_p)
+    np.random.shuffle(index_n)
+    np.random.shuffle(index_c)
+    indexes = index_p + index_n + index_c
+    data_shuffle = data[indexes]
+    label_shuffle = label[indexes]
+    print('Data and label shuffling.')
+    return data_shuffle, label_shuffle
+
+
 def get_im_cv2(img_names, path, batch_size):
     '''
     read all images into a 4 dimensionality np array
@@ -133,7 +150,7 @@ def get_im_cv2(img_names, path, batch_size):
     return imgs
 
 
-def load_covidx(h5_path, sample_number=0, add_aug=False):
+def load_covidx(h5_path, sample_number=0, isRGB=False):
     '''
     the combination of get_class_info() and gey_image_path()
     :param txt_train_file: .txt directory
@@ -141,13 +158,14 @@ def load_covidx(h5_path, sample_number=0, add_aug=False):
     :param add_aug: the path of augmentation images path
     :return: two lists
     '''
-    data, label = load_h5_as_np(h5_path)
+    data, label = load_h5_as_np(h5_path, isRGB)
     pneumonia_number = np.sum(label == 0)
     normal_number = np.sum(label == 1)
     covid_number = np.sum(label == 2)
     print("The number of pneumonia is %d" % pneumonia_number)
     print("The number of normal is %d" % normal_number)
     print("The number of COVID-19 is %d" % covid_number)
+    data, label = random_covidx(data, label)
     if sample_number:
         pneumonia_data = data[0:sample_number]
         normal_data = data[pneumonia_number:pneumonia_number + sample_number]
@@ -182,6 +200,7 @@ def get_train_batch(data, label, batch_size):
     while True:
         for i in range(0, data_number, batch_size):
             datas = data[i: i + batch_size]
+            datas = datas / 255
             labels = label[i: i + batch_size]
             labels = convert_to_one_hot_matrix(labels, 3).T
             yield (datas, labels)
@@ -201,6 +220,7 @@ def get_valid_batch(data, label, batch_size):
     while True:
         for i in range(0, data_number, batch_size):
             datas = data[i: i + batch_size]
+            datas = datas / 255
             labels = label[i: i + batch_size]
             labels = convert_to_one_hot_matrix(labels, 3).T
             yield (datas, labels)
@@ -280,7 +300,7 @@ def plot(history):
     plt.ylabel("Accuracy")
     plt.legend(loc='lower right', fancybox=True)
 
-    plt.savefig("plot.png")
+    plt.savefig("plot.png", dpi=300)
     plt.show()
 
 
@@ -289,26 +309,43 @@ def save_as_h5(txt_file, image_path, save_path):
     dicts_train = get_class_info(txt_file, image_path)
     lists_data, lists_label = get_image_path(dicts_train)
     sample_numbers = len(lists_data)
-    np_images = np.zeros((sample_numbers, 480,480,1))
+    np_images = np.zeros((sample_numbers, 480, 480))
     np_label = np.zeros((sample_numbers, 1))
     for index in range(sample_numbers):
         filename = lists_data[index]
         print(filename)
         read_image_path = image_path + '/' + filename
-        image = cv2.imread(read_image_path, cv2.IMREAD_GRAYSCALE).reshape(480, 480, 1).astype('int8')
+        image = cv2.imread(read_image_path, cv2.IMREAD_GRAYSCALE)
         np_images[index] = image
         np_label[index] = lists_label[index]
-    if not os.path.exists(save_path + '.h5'):
-        h5f = h5py.File(save_path + '.h5', 'w')
-        h5f.create_dataset('data', data=np_images, dtype='int8')
-        h5f.create_dataset('label', data=np_label, dtype='int8')
+    if not os.path.exists(save_path):
+        h5f = h5py.File(save_path, 'w')
+        h5f.create_dataset('data', data=np_images, dtype='uint8')
+        h5f.create_dataset('label', data=np_label, dtype='uint8')
         h5f.close()
     toc = time.time()
     print('.h5 file generating time is %.2f' % (toc - tic))
 
 
-def load_h5_as_np(h5_path):
+def load_h5_as_np(h5_path, isRGB=False):
     f = h5py.File(h5_path, 'r')
     data = np.array(f["data"][:])
     label = np.array(f["label"][:])
+    if isRGB:
+        data = gray2rgb(data)
+        return data, label
+    data = data.reshape(data.shape[0], data.shape[1], data.shape[2], 1)
     return data, label
+
+def gray2rgb(data):
+    number = data.shape[0]
+    rgbs = np.zeros((number, data.shape[1], data.shape[2], 3), dtype='uint8')
+    for index, img in enumerate(data):
+        rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        rgbs[index] = rgb
+        # if (index % 100 == 0):
+        #     print('%d Gray to RGB done.' % (index // 100))
+    print('Gray to RGB done.')
+    return rgbs
+
+
