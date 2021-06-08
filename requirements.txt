@@ -29,7 +29,7 @@ pandas @ file:///opt/concourse/worker/volumes/live/38d1301c-8fa9-4d2f-662e-34ddd
 parso==0.7.0
 pexpect==4.8.0
 pickleshare==0.7.5
-Pillow==7.1.2
+Pillow==8.2.0
 prompt-toolkit==3.0.5
 protobuf==3.12.3
 ptyprocess==0.6.0
